@@ -2,55 +2,13 @@ use bit_vec::BitVec;
 
 pub struct Cpu {
     context : Context,
-    flags: Flags,
 }
 
 impl Cpu {
     pub fn new() -> Cpu {
         Cpu {
             context: Context::new(),
-            flags: Flags::new()
         }
-    }
-
-    pub fn set_carry(&mut self, arg : bool) {
-        self.flags.carry = arg;
-        self.context.S = self.flags.get_status();
-    }
-
-    pub fn set_zero(&mut self, arg : bool) {
-        self.flags.zero = arg;
-        self.context.S = self.flags.get_status();
-    }
-
-    pub fn set_interrupt(&mut self, arg : bool) {
-        self.flags.interrupt = arg;
-        self.context.S = self.flags.get_status();
-    }
-
-    pub fn set_decimal(&mut self, arg : bool) {
-        self.flags.decimal = arg;
-        self.context.S = self.flags.get_status();
-    }
-
-    pub fn set_B(&mut self, arg : bool) {
-        self.flags.B = arg;
-        self.context.S = self.flags.get_status();
-    }
-
-    pub fn set_I(&mut self, arg : bool) {
-        self.flags.I = arg;
-        self.context.S = self.flags.get_status();
-    }
-
-    pub fn set_overflow(&mut self, arg : bool) {
-        self.flags.overflow = arg;
-        self.context.S = self.flags.get_status();
-    }
-
-    pub fn set_negative(&mut self, arg : bool) {
-        self.flags.negative = arg;
-        self.context.S = self.flags.get_status();
     }
 }
 
@@ -146,10 +104,52 @@ struct Context {
 
     // Status Register
     P : u8,
+
+    flags: Flags,
 }
 
 impl Context {
     fn new() -> Context {
-        Context { A: 0, X: 0, Y: 0, PC: 0, S: 0, P: 0 }
+        Context { A: 0, X: 0, Y: 0, PC: 0, S: 0, P: 0 , flags: Flags::new() }
+    }
+
+    pub fn set_carry(&mut self, arg : bool) {
+        self.flags.carry = arg;
+        self.S = self.flags.get_status();
+    }
+
+    pub fn set_zero(&mut self, arg : bool) {
+        self.flags.zero = arg;
+        self.S = self.flags.get_status();
+    }
+
+    pub fn set_interrupt(&mut self, arg : bool) {
+        self.flags.interrupt = arg;
+        self.S = self.flags.get_status();
+    }
+
+    pub fn set_decimal(&mut self, arg : bool) {
+        self.flags.decimal = arg;
+        self.S = self.flags.get_status();
+    }
+
+    pub fn set_B(&mut self, arg : bool) {
+        self.flags.B = arg;
+        self.S = self.flags.get_status();
+    }
+
+    pub fn set_I(&mut self, arg : bool) {
+        self.flags.I = arg;
+        self.S = self.flags.get_status();
+    }
+
+    pub fn set_overflow(&mut self, arg : bool) {
+        self.flags.overflow = arg;
+        self.S = self.flags.get_status();
+    }
+
+    pub fn set_negative(&mut self, arg : bool) {
+        self.flags.negative = arg;
+        self.S = self.flags.get_status();
     }
 }
