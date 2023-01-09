@@ -5,8 +5,8 @@ pub struct Cpu {
 }
 
 impl Cpu {
-    pub fn new() -> Cpu {
-        Cpu {
+    pub fn new() -> Self {
+        Self {
             context: Context::new(),
         }
     }
@@ -25,8 +25,8 @@ struct Flags {
 }
 
 impl Flags {
-    fn new() -> Flags {
-        Flags {
+    fn new() -> Self {
+        Self {
             carry: false,
             zero: false,
             interrupt: false,
@@ -109,8 +109,8 @@ struct Context {
 }
 
 impl Context {
-    fn new() -> Context {
-        Context { A: 0, X: 0, Y: 0, PC: 0, S: 0, P: 0 , flags: Flags::new() }
+    fn new() -> Self {
+        Self { A: 0, X: 0, Y: 0, PC: 0, S: 0, P: 0 , flags: Flags::new() }
     }
 
     pub fn set_carry(&mut self, arg : bool) {
