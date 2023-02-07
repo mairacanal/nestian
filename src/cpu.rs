@@ -37,6 +37,17 @@ enum OpCode {
     // BRK = 0x00,
 }
 
+enum OperandKind {
+    acc,
+    imm,
+    addr,
+}
+
+struct Operand {
+    value: u16,
+    kind: OperandKind,
+}
+
 pub struct Cpu {
     memory: Box<Memory>,
     context: Context,
@@ -72,6 +83,7 @@ impl Cpu {
     }
 
     // Memory Management
+
     pub fn peek(&self, addr : u16) -> u8 { self.memory.get_byte(addr) }
 
     pub fn poke(&mut self, addr : u16, value : u8) { self.memory.set_byte(addr, value); }
@@ -107,6 +119,7 @@ impl Cpu {
     }
 
     // Execution
+
     fn execute(&self) {
 
     }
@@ -133,7 +146,7 @@ impl Cpu {
         }
     }
 
-    fn read_operand(&self, op : Operand) -> u8 {
+    fn read_operand(&self, op : &Operand) -> u8 {
         match op.kind {
             OperandKind::acc => self.context.A,
             OperandKind::imm => op.value as u8,
@@ -141,7 +154,7 @@ impl Cpu {
         }
     }
 
-    fn write_operand(&mut self, op : Operand, value : u8) {
+    fn write_operand(&mut self, op: &Operand, value: u8) {
         match op.kind {
             OperandKind::acc => self.context.A = value,
             OperandKind::addr => self.poke(op.value, value),
@@ -178,6 +191,7 @@ impl Cpu {
     }
 
     // CPU instructions
+
     fn calculate_alu_flag(&mut self, value : u8) {
         self.context.set_zero(value == 0);
         self.context.set_negative((value & 0x80) != 0);
@@ -188,93 +202,116 @@ impl Cpu {
     }
 
     // ADC: Add with carry
-    fn ADC(mode : AddrMode) {
+    fn ADC(&mut self, mode: AddrMode) {
+        let operand =  self.decode_operand(mode);
+        let value = self.read_operand(&operand);
 
+        // A + M + C -> A
+        self.context.A += value + self.context.get_carry() as u8;
+
+        // Update Flags
+        // TODO: Update Carry flag
+        self.determine_overflow_flag(value, self.context.A);
+        self.calculate_alu_flag(self.context.A);
     }
 
     // AND: Logical AND
-    fn AND(mode : AddrMode) {
+    fn AND(&mut self, mode: AddrMode) {
+        let operand =  self.decode_operand(mode);
+        let value = self.read_operand(&operand);
 
+        self.context.A &= value;
+
+        // Update Flags
+        self.calculate_alu_flag(value);
     }
 
     // ASL: Arithmetic Shift Left
-    fn ASL(mode : AddrMode) {
+    fn ASL(&mut self, mode: AddrMode) {
+        let operand =  self.decode_operand(mode);
+        let value = self.read_operand(&operand);
+        let new_value = value << 1;
 
+        self.write_operand(&operand, new_value);
+
+        // Update Flags
+        self.context.set_carry((value & 0x80) != 0);
+        self.context.set_zero(self.context.A == 0);
+        self.context.set_negative((new_value & 0x80) != 0);
     }
 
     // BCC: Branch if Carry Clean
-    fn BCC(mode : AddrMode) {
+    fn BCC(&mut self, mode: AddrMode) {
 
     }
 
     // BCS: Branch if Carry Set
-    fn BCS(mode : AddrMode) {
+    fn BCS(&mut self, mode: AddrMode) {
 
     }
 
     // BEQ: Branch if Equal
-    fn BEQ(mode : AddrMode) {
+    fn BEQ(&mut self, mode: AddrMode) {
 
     }
 
     // BIT: Test bit
-    fn BIT(mode : AddrMode) {
+    fn BIT(&mut self, mode: AddrMode) {
 
     }
 
     // BMI: Branch if Minus
-    fn BMI(mode : AddrMode) {
+    fn BMI(&mut self, mode: AddrMode) {
 
     }
 
     // BNE: Branch if Not Equal
-    fn BNE(mode : AddrMode) {
+    fn BNE(&mut self, mode: AddrMode) {
 
     }
 
     // BPL: Branch if Positive
-    fn BPL(mode : AddrMode) {
+    fn BPL(&mut self, mode: AddrMode) {
 
     }
 
     // BRK: Break
-    fn BRK(mode : AddrMode) {
+    fn BRK(&mut self, mode: AddrMode) {
 
     }
 
     // BVC: Branch if Overflow Clear
-    fn BVC(mode : AddrMode) {
+    fn BVC(&mut self, mode: AddrMode) {
 
     }
 
     // BVS: Branch if Overflow Set
-    fn BVS(mode : AddrMode) {
+    fn BVS(&mut self, mode: AddrMode) {
 
     }
 
     // CLC: Clear Carry Flag
-    fn CLC(mode : AddrMode) {
+    fn CLC(&mut self, mode: AddrMode) {
 
     }
 
     // CLD: Clear Decimal Flag
-    fn CLD(mode : AddrMode) {
+    fn CLD(&mut self, mode: AddrMode) {
 
     }
 
     // CLI: Clear Interrupt Flag
-    fn CLI(mode : AddrMode) {
+    fn CLI(&mut self, mode: AddrMode) {
 
     }
-}
 
-enum OperandKind {
-    acc,
-    imm,
-    addr,
-}
+    // CLV: Clear Overflow Flag
+    fn CLV(&mut self, mode: AddrMode) {
 
-struct Operand {
-    value: u16,
-    kind: OperandKind,
+    }
+
+    // CMP: Compare
+    fn CMP(&mut self, mode: AddrMode) {
+
+    }
 }
