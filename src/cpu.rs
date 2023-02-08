@@ -266,7 +266,14 @@ impl Cpu {
 
     // BIT: Test bit
     fn BIT(&mut self, mode: AddrMode) {
+        let operand =  self.decode_operand(mode);
+        let value = self.read_operand(&operand);
+        let mask = self.context.A & value;
 
+        // Update Flags
+        self.context.set_zero(mask == 0);
+        self.context.set_overflow((value & 0x40) != 0);
+        self.context.set_negative((value & 0x80) != 0);
     }
 
     // BMI: Branch if Minus
@@ -301,7 +308,6 @@ impl Cpu {
 
     // CLC: Clear Carry Flag
     fn CLC(&mut self, mode: AddrMode) {
-
     }
 
     // CLD: Clear Decimal Flag
