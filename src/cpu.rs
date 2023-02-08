@@ -192,6 +192,15 @@ impl Cpu {
 
     // CPU instructions
 
+    fn branch(&mut self, cond: bool, mode: AddrMode) {
+        assert!(matches!(mode, AddrMode::rel));
+
+        if cond {
+            let PC = self.context.PC as i8 + self.decode_byte() as i8;
+            self.context.PC = PC as u16;
+        }
+    }
+
     fn calculate_alu_flag(&mut self, value : u8) {
         self.context.set_zero(value == 0);
         self.context.set_negative((value & 0x80) != 0);
@@ -242,17 +251,17 @@ impl Cpu {
 
     // BCC: Branch if Carry Clean
     fn BCC(&mut self, mode: AddrMode) {
-
+        self.branch(!self.context.get_carry(), mode);
     }
 
     // BCS: Branch if Carry Set
     fn BCS(&mut self, mode: AddrMode) {
-
+        self.branch(self.context.get_carry(), mode);
     }
 
     // BEQ: Branch if Equal
     fn BEQ(&mut self, mode: AddrMode) {
-
+        self.branch(self.context.is_zero(), mode);
     }
 
     // BIT: Test bit
@@ -262,17 +271,17 @@ impl Cpu {
 
     // BMI: Branch if Minus
     fn BMI(&mut self, mode: AddrMode) {
-
+        self.branch(self.context.is_negative(), mode);
     }
 
     // BNE: Branch if Not Equal
     fn BNE(&mut self, mode: AddrMode) {
-
+        self.branch(!self.context.is_zero(), mode);
     }
 
     // BPL: Branch if Positive
     fn BPL(&mut self, mode: AddrMode) {
-
+        self.branch(!self.context.is_negative(), mode);
     }
 
     // BRK: Break
@@ -282,12 +291,12 @@ impl Cpu {
 
     // BVC: Branch if Overflow Clear
     fn BVC(&mut self, mode: AddrMode) {
-
+        self.branch(!self.context.is_overflow(), mode);
     }
 
     // BVS: Branch if Overflow Set
     fn BVS(&mut self, mode: AddrMode) {
-
+        self.branch(self.context.is_overflow(), mode);
     }
 
     // CLC: Clear Carry Flag
