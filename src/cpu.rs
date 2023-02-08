@@ -84,9 +84,9 @@ impl Cpu {
 
     // Memory Management
 
-    pub fn peek(&self, addr : u16) -> u8 { self.memory.get_byte(addr) }
+    pub fn peek(&self, addr: &u16) -> u8 { self.memory.get_byte(*addr) }
 
-    pub fn poke(&mut self, addr : u16, value : u8) { self.memory.set_byte(addr, value); }
+    pub fn poke(&mut self, addr: &u16, value: u8) { self.memory.set_byte(*addr, value); }
 
     // Stack Management
 
@@ -150,14 +150,14 @@ impl Cpu {
         match op.kind {
             OperandKind::acc => self.context.A,
             OperandKind::imm => op.value as u8,
-            OperandKind::addr => self.peek(op.value),
+            OperandKind::addr => self.peek(&op.value),
         }
     }
 
     fn write_operand(&mut self, op: &Operand, value: u8) {
         match op.kind {
             OperandKind::acc => self.context.A = value,
-            OperandKind::addr => self.poke(op.value, value),
+            OperandKind::addr => self.poke(&op.value, value),
             _ => ()
         }
     }
@@ -176,13 +176,13 @@ impl Cpu {
             AddrMode::abs_y => self.decode_word() + self.context.Y as u16,
             AddrMode::ind_x => {
                 let word = self.decode_byte() as u16;
-                let addr = self.peek(word);
-                self.peek((addr + self.context.X) as u16) as u16 +
-                    (self.peek((addr + self.context.X + 1) as u16) as u16) << 8
+                let addr = self.peek(&word);
+                self.peek(&((addr + self.context.X) as u16)) as u16 +
+                    (self.peek(&((addr + self.context.X + 1) as u16)) as u16) << 8
             }
             AddrMode::ind_y => {
                 let addr = self.decode_byte() as u16;
-                self.peek(addr) as u16 + (self.peek(addr + 1) as u16) << 8 + self.context.Y as u16
+                self.peek(&addr) as u16 + (self.peek(&(addr + 1)) as u16) << 8 + self.context.Y as u16
             }
             _ => {
                 panic!("Not implemented yet");
@@ -328,6 +328,45 @@ impl Cpu {
 
     // CMP: Compare
     fn CMP(&mut self, mode: AddrMode) {
+        let operand =  self.decode_operand(mode);
+        let value = self.read_operand(&operand);
 
+        // Update Flags
+        if self.context.A < value {
+            self.context.set_negative(true);
+        } else if self.context.A > value {
+            self.context.set_carry(true);
+        } else {
+            self.context.set_carry(true);
+            self.context.set_zero(true);
+        }
+    }
+
+    // CPX: Compare X Register
+    fn CPX(&mut self, mode: AddrMode) { }
+
+    // CPY: Compare Y Register
+    fn CPY(&mut self, mode: AddrMode) { }
+
+    // DEC: Decrement Memory
+    fn DEC(&mut self, mode: AddrMode) {
+        let addr =  self.decode_operand_addr(mode);
+        let new_value = self.peek(&addr) - 1;
+
+        self.poke(&addr, new_value);
+
+        self.calculate_alu_flag(new_value);
+    }
+
+    // DEX: Decrement X Register
+    fn DEX(&mut self, mode: AddrMode) {
+        self.context.X -= 1;
+        self.calculate_alu_flag(self.context.X);
+    }
+
+    // DEY: Decrement Y Register
+    fn DEY(&mut self, mode: AddrMode) {
+        self.context.Y -= 1;
+        self.calculate_alu_flag(self.context.Y);
     }
 }
