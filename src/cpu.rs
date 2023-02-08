@@ -308,21 +308,22 @@ impl Cpu {
 
     // CLC: Clear Carry Flag
     fn CLC(&mut self, mode: AddrMode) {
+        self.context.set_carry(false);
     }
 
     // CLD: Clear Decimal Flag
     fn CLD(&mut self, mode: AddrMode) {
-
+        self.context.set_decimal(false);
     }
 
     // CLI: Clear Interrupt Flag
     fn CLI(&mut self, mode: AddrMode) {
-
+        self.context.set_interrupt(false);
     }
 
     // CLV: Clear Overflow Flag
     fn CLV(&mut self, mode: AddrMode) {
-
+        self.context.set_overflow(false);
     }
 
     // CMP: Compare
