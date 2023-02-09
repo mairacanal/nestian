@@ -245,8 +245,7 @@ impl Cpu {
 
         // Update Flags
         self.context.set_carry((value & 0x80) != 0);
-        self.context.set_zero(self.context.A == 0);
-        self.context.set_negative((new_value & 0x80) != 0);
+        self.calculate_alu_flag(new_value);
     }
 
     // BCC: Branch if Carry Clean
@@ -401,5 +400,75 @@ impl Cpu {
     fn iny(&mut self, mode: AddrMode) {
         self.context.Y += 1;
         self.calculate_alu_flag(self.context.Y);
+    }
+
+    // JMP: Jump
+    fn jmp(&mut self, mode: AddrMode) {
+        self.context.PC = self.decode_operand_addr(mode);
+    }
+
+    // JSR: Jump to Subroutine
+    fn jsr(&mut self, mode: AddrMode) {
+        // We push the actual return address - 1, which is the current
+        // place + 1
+        self.push_word(self.context.PC + 1);
+        self.context.PC = self.decode_operand_addr(mode);
+    }
+
+    // LDA: Load Accumulator
+    fn lda(&mut self, mode: AddrMode) {
+        let operand =  self.decode_operand(mode);
+        let value = self.read_operand(&operand);
+
+        self.context.A = value;
+
+        self.calculate_alu_flag(self.context.A);
+    }
+
+    // LDX: Load X Register
+    fn ldx(&mut self, mode: AddrMode) {
+        let operand =  self.decode_operand(mode);
+        let value = self.read_operand(&operand);
+
+        self.context.X = value;
+
+        self.calculate_alu_flag(self.context.X);
+    }
+
+    // LDY: Load Y Register
+    fn ldy(&mut self, mode: AddrMode) {
+        let operand =  self.decode_operand(mode);
+        let value = self.read_operand(&operand);
+
+        self.context.Y = value;
+
+        self.calculate_alu_flag(self.context.Y);
+    }
+
+    // LSR: Logical Shift Right
+    fn lsr(&mut self, mode: AddrMode) {
+        let operand =  self.decode_operand(mode);
+        let value = self.read_operand(&operand);
+        let new_value = value >> 1;
+
+        self.write_operand(&operand, new_value);
+
+        // Update Flags
+        self.context.set_carry((value & 0x01) != 0);
+        self.calculate_alu_flag(new_value);
+    }
+
+    // NOP: No Operation
+    fn nop(&mut self, mode: AddrMode) {}
+
+    // ORA: Logical Inclusive OR
+    fn ora(&mut self, mode: AddrMode) {
+        let operand =  self.decode_operand(mode);
+        let value = self.read_operand(&operand);
+
+        self.context.A |= value;
+
+        // Update Flags
+        self.calculate_alu_flag(self.context.A);
     }
 }
