@@ -211,7 +211,7 @@ impl Cpu {
     }
 
     // ADC: Add with carry
-    fn ADC(&mut self, mode: AddrMode) {
+    fn adc(&mut self, mode: AddrMode) {
         let operand =  self.decode_operand(mode);
         let value = self.read_operand(&operand);
 
@@ -225,7 +225,7 @@ impl Cpu {
     }
 
     // AND: Logical AND
-    fn AND(&mut self, mode: AddrMode) {
+    fn and(&mut self, mode: AddrMode) {
         let operand =  self.decode_operand(mode);
         let value = self.read_operand(&operand);
 
@@ -236,7 +236,7 @@ impl Cpu {
     }
 
     // ASL: Arithmetic Shift Left
-    fn ASL(&mut self, mode: AddrMode) {
+    fn asl(&mut self, mode: AddrMode) {
         let operand =  self.decode_operand(mode);
         let value = self.read_operand(&operand);
         let new_value = value << 1;
@@ -250,22 +250,22 @@ impl Cpu {
     }
 
     // BCC: Branch if Carry Clean
-    fn BCC(&mut self, mode: AddrMode) {
+    fn bcc(&mut self, mode: AddrMode) {
         self.branch(!self.context.get_carry(), mode);
     }
 
     // BCS: Branch if Carry Set
-    fn BCS(&mut self, mode: AddrMode) {
+    fn bcs(&mut self, mode: AddrMode) {
         self.branch(self.context.get_carry(), mode);
     }
 
     // BEQ: Branch if Equal
-    fn BEQ(&mut self, mode: AddrMode) {
+    fn beq(&mut self, mode: AddrMode) {
         self.branch(self.context.is_zero(), mode);
     }
 
     // BIT: Test bit
-    fn BIT(&mut self, mode: AddrMode) {
+    fn bit(&mut self, mode: AddrMode) {
         let operand =  self.decode_operand(mode);
         let value = self.read_operand(&operand);
         let mask = self.context.A & value;
@@ -277,57 +277,57 @@ impl Cpu {
     }
 
     // BMI: Branch if Minus
-    fn BMI(&mut self, mode: AddrMode) {
+    fn bmi(&mut self, mode: AddrMode) {
         self.branch(self.context.is_negative(), mode);
     }
 
     // BNE: Branch if Not Equal
-    fn BNE(&mut self, mode: AddrMode) {
+    fn bne(&mut self, mode: AddrMode) {
         self.branch(!self.context.is_zero(), mode);
     }
 
     // BPL: Branch if Positive
-    fn BPL(&mut self, mode: AddrMode) {
+    fn bpl(&mut self, mode: AddrMode) {
         self.branch(!self.context.is_negative(), mode);
     }
 
     // BRK: Break
-    fn BRK(&mut self, mode: AddrMode) {
+    fn brk(&mut self, mode: AddrMode) {
 
     }
 
     // BVC: Branch if Overflow Clear
-    fn BVC(&mut self, mode: AddrMode) {
+    fn bvc(&mut self, mode: AddrMode) {
         self.branch(!self.context.is_overflow(), mode);
     }
 
     // BVS: Branch if Overflow Set
-    fn BVS(&mut self, mode: AddrMode) {
+    fn bvs(&mut self, mode: AddrMode) {
         self.branch(self.context.is_overflow(), mode);
     }
 
     // CLC: Clear Carry Flag
-    fn CLC(&mut self, mode: AddrMode) {
+    fn clc(&mut self, mode: AddrMode) {
         self.context.set_carry(false);
     }
 
     // CLD: Clear Decimal Flag
-    fn CLD(&mut self, mode: AddrMode) {
+    fn cld(&mut self, mode: AddrMode) {
         self.context.set_decimal(false);
     }
 
     // CLI: Clear Interrupt Flag
-    fn CLI(&mut self, mode: AddrMode) {
+    fn cli(&mut self, mode: AddrMode) {
         self.context.set_interrupt(false);
     }
 
     // CLV: Clear Overflow Flag
-    fn CLV(&mut self, mode: AddrMode) {
+    fn clv(&mut self, mode: AddrMode) {
         self.context.set_overflow(false);
     }
 
     // CMP: Compare
-    fn CMP(&mut self, mode: AddrMode) {
+    fn cmp(&mut self, mode: AddrMode) {
         let operand =  self.decode_operand(mode);
         let value = self.read_operand(&operand);
 
@@ -343,13 +343,13 @@ impl Cpu {
     }
 
     // CPX: Compare X Register
-    fn CPX(&mut self, mode: AddrMode) { }
+    fn cpx(&mut self, mode: AddrMode) { }
 
     // CPY: Compare Y Register
-    fn CPY(&mut self, mode: AddrMode) { }
+    fn cpy(&mut self, mode: AddrMode) { }
 
     // DEC: Decrement Memory
-    fn DEC(&mut self, mode: AddrMode) {
+    fn dec(&mut self, mode: AddrMode) {
         let addr =  self.decode_operand_addr(mode);
         let new_value = self.peek(&addr) - 1;
 
@@ -359,13 +359,13 @@ impl Cpu {
     }
 
     // DEX: Decrement X Register
-    fn DEX(&mut self, mode: AddrMode) {
+    fn dex(&mut self, mode: AddrMode) {
         self.context.X -= 1;
         self.calculate_alu_flag(self.context.X);
     }
 
     // DEY: Decrement Y Register
-    fn DEY(&mut self, mode: AddrMode) {
+    fn dey(&mut self, mode: AddrMode) {
         self.context.Y -= 1;
         self.calculate_alu_flag(self.context.Y);
     }
