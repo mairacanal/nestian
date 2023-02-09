@@ -232,7 +232,7 @@ impl Cpu {
         self.context.A &= value;
 
         // Update Flags
-        self.calculate_alu_flag(value);
+        self.calculate_alu_flag(self.context.A);
     }
 
     // ASL: Arithmetic Shift Left
@@ -367,6 +367,39 @@ impl Cpu {
     // DEY: Decrement Y Register
     fn dey(&mut self, mode: AddrMode) {
         self.context.Y -= 1;
+        self.calculate_alu_flag(self.context.Y);
+    }
+
+    // EOR: Exclusive OR
+    fn eor(&mut self, mode: AddrMode) {
+        let operand =  self.decode_operand(mode);
+        let value = self.read_operand(&operand);
+
+        self.context.A ^= value;
+
+        // Update Flags
+        self.calculate_alu_flag(self.context.A);
+    }
+
+    // INC: Increment Memory
+    fn inc(&mut self, mode: AddrMode) {
+        let addr =  self.decode_operand_addr(mode);
+        let new_value = self.peek(&addr) + 1;
+
+        self.poke(&addr, new_value);
+
+        self.calculate_alu_flag(new_value);
+    }
+
+    // INX: Increment X Register
+    fn inx(&mut self, mode: AddrMode) {
+        self.context.X += 1;
+        self.calculate_alu_flag(self.context.X);
+    }
+
+    // INY: Increment Y Register
+    fn iny(&mut self, mode: AddrMode) {
+        self.context.Y += 1;
         self.calculate_alu_flag(self.context.Y);
     }
 }
