@@ -512,4 +512,40 @@ impl Cpu {
         let status = self.pop_byte();
         self.context.set_flags(status);
     }
+
+    /// ROL: Rotate Left
+    ///
+    /// Move each of the bits in either A or M one place to the left. Bit 0 is
+    /// filled with the current value of the carry flag whilst the old bit 7
+    /// becomes the new carry flag value.
+    fn rol(&mut self, mode: AddrMode) {
+        let operand = self.decode_operand(mode);
+        let value = self.read_operand(&operand);
+        let new_value = (value << 1) & self.context.get_carry() as u8;
+
+        self.write_operand(&operand, new_value);
+
+        // Update Flags
+        self.context.set_carry((value & 0x80) != 0);
+        self.context.set_zero(self.context.A == 0);
+        self.context.set_negative((new_value & 0x80) != 0);
+    }
+
+    /// ROR: Rotate Right
+    ///
+    /// Move each of the bits in either A or M one place to the right. Bit 7
+    /// is filled with the current value of the carry flag whilst the old bit
+    /// 0 becomes the new carry flag value.
+    fn ror(&mut self, mode: AddrMode) {
+        let operand = self.decode_operand(mode);
+        let value = self.read_operand(&operand);
+        let new_value = (value >> 1) & ((self.context.get_carry() as u8) << 7);
+
+        self.write_operand(&operand, new_value);
+
+        // Update Flags
+        self.context.set_carry((value & 0x01) != 0);
+        self.context.set_zero(self.context.A == 0);
+        self.context.set_negative((new_value & 0x80) != 0);
+    }
 }
