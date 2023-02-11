@@ -148,3 +148,120 @@ impl Context {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn status() {
+        let mut context = Context::new();
+
+        context.set_flags(0xfd);
+
+        assert_eq!(context.P, 0xfd);
+        assert_eq!(context.flags.carry, true);
+        assert_eq!(context.flags.zero, false);
+        assert_eq!(context.flags.interrupt, true);
+        assert_eq!(context.flags.decimal, true);
+        assert_eq!(context.flags.B, true);
+        assert_eq!(context.flags.I, true);
+        assert_eq!(context.flags.overflow, true);
+        assert_eq!(context.flags.negative, true);
+
+        context.set_carry(false);
+
+        assert_eq!(context.P, 0xfc);
+        assert_eq!(context.flags.carry, false);
+        assert_eq!(context.flags.zero, false);
+        assert_eq!(context.flags.interrupt, true);
+        assert_eq!(context.flags.decimal, true);
+        assert_eq!(context.flags.B, true);
+        assert_eq!(context.flags.I, true);
+        assert_eq!(context.flags.overflow, true);
+        assert_eq!(context.flags.negative, true);
+
+        context.set_zero(true);
+
+        assert_eq!(context.P, 0xfe);
+        assert_eq!(context.flags.carry, false);
+        assert_eq!(context.flags.zero, true);
+        assert_eq!(context.flags.interrupt, true);
+        assert_eq!(context.flags.decimal, true);
+        assert_eq!(context.flags.B, true);
+        assert_eq!(context.flags.I, true);
+        assert_eq!(context.flags.overflow, true);
+        assert_eq!(context.flags.negative, true);
+
+        context.set_interrupt(false);
+
+        assert_eq!(context.P, 0xfa);
+        assert_eq!(context.flags.carry, false);
+        assert_eq!(context.flags.zero, true);
+        assert_eq!(context.flags.interrupt, false);
+        assert_eq!(context.flags.decimal, true);
+        assert_eq!(context.flags.B, true);
+        assert_eq!(context.flags.I, true);
+        assert_eq!(context.flags.overflow, true);
+        assert_eq!(context.flags.negative, true);
+
+        context.set_decimal(false);
+
+        assert_eq!(context.P, 0xf2);
+        assert_eq!(context.flags.carry, false);
+        assert_eq!(context.flags.zero, true);
+        assert_eq!(context.flags.interrupt, false);
+        assert_eq!(context.flags.decimal, false);
+        assert_eq!(context.flags.B, true);
+        assert_eq!(context.flags.I, true);
+        assert_eq!(context.flags.overflow, true);
+        assert_eq!(context.flags.negative, true);
+
+        context.set_B(false);
+
+        assert_eq!(context.P, 0xe2);
+        assert_eq!(context.flags.carry, false);
+        assert_eq!(context.flags.zero, true);
+        assert_eq!(context.flags.interrupt, false);
+        assert_eq!(context.flags.decimal, false);
+        assert_eq!(context.flags.B, false);
+        assert_eq!(context.flags.I, true);
+        assert_eq!(context.flags.overflow, true);
+        assert_eq!(context.flags.negative, true);
+
+        context.set_I(false);
+
+        assert_eq!(context.P, 0xc2);
+        assert_eq!(context.flags.carry, false);
+        assert_eq!(context.flags.zero, true);
+        assert_eq!(context.flags.interrupt, false);
+        assert_eq!(context.flags.decimal, false);
+        assert_eq!(context.flags.B, false);
+        assert_eq!(context.flags.I, false);
+        assert_eq!(context.flags.overflow, true);
+        assert_eq!(context.flags.negative, true);
+
+        context.set_overflow(false);
+
+        assert_eq!(context.P, 0x82);
+        assert_eq!(context.flags.carry, false);
+        assert_eq!(context.flags.zero, true);
+        assert_eq!(context.flags.interrupt, false);
+        assert_eq!(context.flags.decimal, false);
+        assert_eq!(context.flags.B, false);
+        assert_eq!(context.flags.I, false);
+        assert_eq!(context.flags.overflow, false);
+        assert_eq!(context.flags.negative, true);
+
+        context.set_negative(false);
+
+        assert_eq!(context.P, 0x02);
+        assert_eq!(context.flags.carry, false);
+        assert_eq!(context.flags.zero, true);
+        assert_eq!(context.flags.interrupt, false);
+        assert_eq!(context.flags.decimal, false);
+        assert_eq!(context.flags.B, false);
+        assert_eq!(context.flags.I, false);
+        assert_eq!(context.flags.overflow, false);
+        assert_eq!(context.flags.negative, false);
+    }
+}
