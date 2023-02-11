@@ -1,4 +1,4 @@
-const RAM_SIZE : u32 = 0x10000;
+const RAM_SIZE: u32 = 0x10000;
 
 pub struct Memory {
     ram: Vec<u8>,
@@ -7,7 +7,7 @@ pub struct Memory {
 impl Memory {
     pub fn new() -> Self {
         Memory {
-           ram: vec![0; RAM_SIZE as usize],
+            ram: vec![0; RAM_SIZE as usize],
         }
     }
 
@@ -79,7 +79,7 @@ mod tests {
     fn word() {
         let mut memory = Memory::new();
 
-        for i in 0..RAM_SIZE/2 {
+        for i in 0..RAM_SIZE / 2 {
             assert_eq!(memory.get_word(i as u16), 0);
         }
 
