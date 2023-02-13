@@ -7,38 +7,26 @@ const STACK_OFFSET: u16 = 0x0100;
 
 // https://www.nesdev.org/wiki/CPU_addressing_modes
 enum AddrMode {
-    imp,     // implicit
-    acc,     // val = A
-    imm,     // val = arg_8
-    ind_jmp, // val = *arg_16 for jmp operations
-    rel,     // val = arg_8 as offset for branch operations
-    abs,     // val = *arg_16
-    abs_jmp, // val = arg_16 for jmp operations
-    zp,     // val = arg_8 for fetching the value from a 8-bit address on the zero page
-    zp_ind_x, // val = *((arg_8 + X) % 256), takes 4 cycles
-    zp_ind_y, // val = *((arg_8 + Y) % 256), takes 4 cycles
-    abs_x,    // val = *(arg_8 + X), takes 4 cycles or more
-    abs_y,    // val = *(arg_8 + Y), takes 4 cycles or more
-    ind_x,    // val = *(*((arg + X) % 256) + *((arg + X + 1) % 256) * 256), takes 6 cycles
-    ind_y, // val = *(*(arg) + *((arg + 1) % 256) * 256 + Y), takes +5 cycles
-}
-
-enum OpCode {
-    ORA = 0x00,
-    AND = 0x20,
-    EOR = 0x40,
-    ADC = 0x60,
-    STA = 0x80,
-    LDA = 0xA0,
-    CMP = 0xC0,
-    SBC = 0xE0,
-    // BRK = 0x00,
+    Imp,    // implicit
+    Acc,    // val = A
+    Imm,    // val = arg_8
+    IndJmp, // val = *arg_16 for jmp operations
+    Rel,    // val = arg_8 as offset for branch operations
+    Abs,    // val = *arg_16
+    AbsJmp, // val = arg_16 for jmp operations
+    Zp,     // val = arg_8 for fetching the value from a 8-bit address on the zero page
+    ZpIndX, // val = *((arg_8 + X) % 256), takes 4 cycles
+    ZpIndY, // val = *((arg_8 + Y) % 256), takes 4 cycles
+    AbsX,   // val = *(arg_8 + X), takes 4 cycles or more
+    AbsY,   // val = *(arg_8 + Y), takes 4 cycles or more
+    IndX,   // val = *(*((arg + X) % 256) + *((arg + X + 1) % 256) * 256), takes 6 cycles
+    IndY,   // val = *(*(arg) + *((arg + 1) % 256) * 256 + Y), takes +5 cycles
 }
 
 enum OperandKind {
-    acc,
-    imm,
-    addr,
+    Acc,
+    Imm,
+    Addr,
 }
 
 struct Operand {
@@ -66,7 +54,7 @@ impl Cpu {
     }
 
     pub fn power_on(&mut self) {
-        self.context.P = 0xFD;
+        self.context.S = 0x34;
         self.context.set_flags(0x34);
     }
 
@@ -119,7 +107,16 @@ impl Cpu {
 
     // Execution
 
-    fn execute(&self) {}
+    fn execute(&mut self) {
+        loop {
+            let op_code = self.decode_byte();
+
+            match op_code {
+                0x69 => self.adc(AddrMode::Imm),
+                _ => panic!("Not an instruction!"),
+            }
+        }
+    }
 
     fn decode_byte(&mut self) -> u8 {
         let byte = self.memory.get_byte(self.context.PC);
@@ -139,57 +136,57 @@ impl Cpu {
 
     fn decode_operand(&mut self, mode: AddrMode) -> Operand {
         match mode {
-            AddrMode::acc => Operand {
+            AddrMode::Acc => Operand {
                 value: 0,
-                kind: OperandKind::acc,
+                kind: OperandKind::Acc,
             },
-            AddrMode::imm => Operand {
+            AddrMode::Imm => Operand {
                 value: self.decode_byte() as u16,
-                kind: OperandKind::imm,
+                kind: OperandKind::Imm,
             },
             _ => Operand {
                 value: self.decode_operand_addr(mode),
-                kind: OperandKind::addr,
+                kind: OperandKind::Addr,
             },
         }
     }
 
     fn read_operand(&self, op: &Operand) -> u8 {
         match op.kind {
-            OperandKind::acc => self.context.A,
-            OperandKind::imm => op.value as u8,
-            OperandKind::addr => self.peek(&op.value),
+            OperandKind::Acc => self.context.A,
+            OperandKind::Imm => op.value as u8,
+            OperandKind::Addr => self.peek(&op.value),
         }
     }
 
     fn write_operand(&mut self, op: &Operand, value: u8) {
         match op.kind {
-            OperandKind::acc => self.context.A = value,
-            OperandKind::addr => self.poke(&op.value, value),
+            OperandKind::Acc => self.context.A = value,
+            OperandKind::Addr => self.poke(&op.value, value),
             _ => (),
         }
     }
 
     fn decode_operand_addr(&mut self, mode: AddrMode) -> u16 {
         match mode {
-            AddrMode::zp => self.decode_byte() as u16,
-            AddrMode::zp_ind_x => (self.decode_byte() + self.context.X) as u16,
-            AddrMode::zp_ind_y => (self.decode_byte() + self.context.Y) as u16,
-            AddrMode::ind_jmp => {
+            AddrMode::Zp => self.decode_byte() as u16,
+            AddrMode::ZpIndX => (self.decode_byte() + self.context.X) as u16,
+            AddrMode::ZpIndY => (self.decode_byte() + self.context.Y) as u16,
+            AddrMode::IndJmp => {
                 let word = self.decode_word();
                 self.memory.get_word(word)
             }
-            AddrMode::abs => self.decode_word(),
-            AddrMode::abs_x => self.decode_word() + self.context.X as u16,
-            AddrMode::abs_y => self.decode_word() + self.context.Y as u16,
-            AddrMode::ind_x => {
+            AddrMode::Abs => self.decode_word(),
+            AddrMode::AbsX => self.decode_word() + self.context.X as u16,
+            AddrMode::AbsY => self.decode_word() + self.context.Y as u16,
+            AddrMode::IndX => {
                 let word = self.decode_byte() as u16;
                 let addr = self.peek(&word);
                 self.peek(&((addr + self.context.X) as u16)) as u16
                     + (self.peek(&((addr + self.context.X + 1) as u16)) as u16)
                     << 8
             }
-            AddrMode::ind_y => {
+            AddrMode::IndY => {
                 let addr = self.decode_byte() as u16;
                 self.peek(&addr) as u16 + (self.peek(&(addr + 1)) as u16)
                     << 8 + self.context.Y as u16
@@ -203,7 +200,7 @@ impl Cpu {
     // CPU instructions
 
     fn branch(&mut self, cond: bool, mode: AddrMode) {
-        assert!(matches!(mode, AddrMode::rel));
+        assert!(matches!(mode, AddrMode::Rel));
 
         if cond {
             let PC = self.context.PC as i8 + self.decode_byte() as i8;
@@ -576,7 +573,7 @@ impl Cpu {
         let value = self.read_operand(&operand);
 
         // A,Z,C,N = A-M-(1-C)
-        self.context.A = self.context.A  - value - (1 - self.context.get_carry() as u8);
+        self.context.A = self.context.A - value - (1 - self.context.get_carry() as u8);
 
         self.context.set_carry(self.context.A > value);
         self.determine_overflow_flag(value, self.context.A);
