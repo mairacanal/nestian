@@ -548,4 +548,141 @@ impl Cpu {
         self.context.set_zero(self.context.A == 0);
         self.context.set_negative((new_value & 0x80) != 0);
     }
+
+    /// RTI: Return from Interrupt
+    ///
+    /// The RTI instruction is used at the end of an interrupt processing routine.
+    /// It pulls the processor flags from the stack followed by the program counter.
+    fn rti(&mut self, mode: AddrMode) {}
+
+    /// RTS: Return from Subroutine
+    ///
+    /// The RTS instruction is used at the end of a subroutine to return to the
+    /// calling routine. It pulls the program counter (minus one) from the stack.
+    fn rts(&mut self, mode: AddrMode) {
+        // Set JSR: we pushed the actual return address - 1.
+        let ret = self.pop_word() + 1;
+        self.context.PC = ret;
+    }
+
+    /// SBC: Subtract with Carry
+    ///
+    /// This instruction subtracts the contents of a memory location to the
+    /// accumulator together with the not of the carry bit. If overflow occurs
+    /// the carry bit is clear, this enables multiple byte subtraction to be
+    /// performed.
+    fn sbc(&mut self, mode: AddrMode) {
+        let operand = self.decode_operand(mode);
+        let value = self.read_operand(&operand);
+
+        // A,Z,C,N = A-M-(1-C)
+        self.context.A = self.context.A  - value - (1 - self.context.get_carry() as u8);
+
+        self.context.set_carry(self.context.A > value);
+        self.determine_overflow_flag(value, self.context.A);
+        self.calculate_alu_flag(self.context.A);
+    }
+
+    /// SEC: Set Carry Flag
+    ///
+    /// Set the carry flag to one.
+    fn sec(&mut self, mode: AddrMode) {
+        self.context.set_carry(true);
+    }
+
+    /// SED: Set Decimal Flag
+    ///
+    /// Set the decimal flag to one.
+    fn sed(&mut self, mode: AddrMode) {
+        self.context.set_decimal(true);
+    }
+
+    /// SEI: Set Interrupt Flag
+    ///
+    /// Set the interrupt disable flag to one.
+    fn sei(&mut self, mode: AddrMode) {
+        self.context.set_interrupt(true);
+    }
+
+    /// STA: Store Accumulator
+    ///
+    /// Stores the contents of the accumulator into memory.
+    fn sta(&mut self, mode: AddrMode) {
+        let operand = self.decode_operand(mode);
+        let value = operand.value;
+
+        self.poke(&value, self.context.A);
+    }
+
+    /// STX: Store X Register
+    ///
+    /// Stores the contents of the X Register into memory.
+    fn stx(&mut self, mode: AddrMode) {
+        let operand = self.decode_operand(mode);
+        let value = operand.value;
+
+        self.poke(&value, self.context.X);
+    }
+
+    /// STY: Store Y Register
+    ///
+    /// Stores the contents of the Y Register into memory.
+    fn sty(&mut self, mode: AddrMode) {
+        let operand = self.decode_operand(mode);
+        let value = operand.value;
+
+        self.poke(&value, self.context.Y);
+    }
+
+    /// TAX: Transfer Accumulator to X
+    ///
+    /// Copies the current contents of the accumulator into the X register and
+    /// sets the zero and negative flags as appropriate.
+    fn tax(&mut self, mode: AddrMode) {
+        self.context.X = self.context.A;
+        self.calculate_alu_flag(self.context.X);
+    }
+
+    /// TAY: Transfer Accumulator to Y
+    ///
+    /// Copies the current contents of the accumulator into the Y register and
+    /// sets the zero and negative flags as appropriate.
+    fn tay(&mut self, mode: AddrMode) {
+        self.context.Y = self.context.A;
+        self.calculate_alu_flag(self.context.Y);
+    }
+
+    /// TSX: Transfer Stack Pointer to X
+    ///
+    /// Copies the current contents of the stack register into the X register
+    /// and sets the zero and negative flags as appropriate.
+    fn tsx(&mut self, mode: AddrMode) {
+        self.context.X = self.context.S;
+        self.calculate_alu_flag(self.context.X);
+    }
+
+    /// TXA: Transfer X to Accumulator
+    ///
+    /// Copies the current contents of the X register into the accumulator
+    /// and sets the zero and negative flags as appropriate.
+    fn txa(&mut self, mode: AddrMode) {
+        self.context.A = self.context.X;
+        self.calculate_alu_flag(self.context.A);
+    }
+
+    /// TXS: Transfer X to Stack Pointer
+    ///
+    /// Copies the current contents of the X register into the stack register.
+    fn txs(&mut self, mode: AddrMode) {
+        self.context.S = self.context.X;
+    }
+
+    /// TYA: Transfer Y to Accumulator
+    ///
+    /// Copies the current contents of the Y register into the accumulator
+    /// and sets the zero and negative flags as appropriate.
+    fn tya(&mut self, mode: AddrMode) {
+        self.context.A = self.context.Y;
+        self.calculate_alu_flag(self.context.A);
+    }
 }
