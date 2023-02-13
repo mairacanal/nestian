@@ -218,7 +218,11 @@ impl Cpu {
             .set_overflow((old_value & 0x80) != (new_value & 0x80));
     }
 
-    // ADC: Add with carry
+    /// ADC: Add with carry
+    ///
+    /// This instruction adds the contents of a memory location to the
+    /// accumulator together with the carry bit. If overflow occurs the carry
+    /// bit is set, this enables multiple byte addition to be performed.
     fn adc(&mut self, mode: AddrMode) {
         let operand = self.decode_operand(mode);
         let value = self.read_operand(&operand);
@@ -226,13 +230,15 @@ impl Cpu {
         // A + M + C -> A
         self.context.A += value + self.context.get_carry() as u8;
 
-        // Update Flags
         // TODO: Update Carry flag
         self.determine_overflow_flag(value, self.context.A);
         self.calculate_alu_flag(self.context.A);
     }
 
-    // AND: Logical AND
+    /// AND: Logical AND
+    ///
+    /// A logical AND is performed, bit by bit, on the accumulator contents
+    /// using the contents of a byte of memory.
     fn and(&mut self, mode: AddrMode) {
         let operand = self.decode_operand(mode);
         let value = self.read_operand(&operand);
@@ -243,7 +249,9 @@ impl Cpu {
         self.calculate_alu_flag(self.context.A);
     }
 
-    // ASL: Arithmetic Shift Left
+    /// ASL: Arithmetic Shift Left
+    ///
+    ///
     fn asl(&mut self, mode: AddrMode) {
         let operand = self.decode_operand(mode);
         let value = self.read_operand(&operand);
@@ -331,7 +339,10 @@ impl Cpu {
         self.context.set_overflow(false);
     }
 
-    // CMP: Compare
+    /// CMP: Compare
+    ///
+    /// This instruction compares the contents of the accumulator with another
+    /// memory held value and sets the zero and carry flags as appropriate.
     fn cmp(&mut self, mode: AddrMode) {
         let operand = self.decode_operand(mode);
         let value = self.read_operand(&operand);
@@ -375,7 +386,10 @@ impl Cpu {
         self.calculate_alu_flag(self.context.Y);
     }
 
-    // EOR: Exclusive OR
+    /// EOR: Exclusive OR
+    ///
+    /// An exclusive OR is performed, bit by bit, on the accumulator contents
+    /// using the contents of a byte of memory.
     fn eor(&mut self, mode: AddrMode) {
         let operand = self.decode_operand(mode);
         let value = self.read_operand(&operand);
@@ -451,7 +465,10 @@ impl Cpu {
         self.calculate_alu_flag(self.context.Y);
     }
 
-    // LSR: Logical Shift Right
+    /// LSR: Logical Shift Right
+    ///
+    /// Each of the bits in A or M is shift one place to the right. The bit that
+    /// was in bit 0 is shifted into the carry flag. Bit 7 is set to zero.
     fn lsr(&mut self, mode: AddrMode) {
         let operand = self.decode_operand(mode);
         let value = self.read_operand(&operand);
@@ -464,10 +481,16 @@ impl Cpu {
         self.calculate_alu_flag(new_value);
     }
 
-    // NOP: No Operation
+    /// NOP: No Operation
+    ///
+    /// The NOP instruction causes no changes to the processor other than the
+    /// normal incrementing of the program counter to the next instruction.
     fn nop(&mut self, mode: AddrMode) {}
 
-    // ORA: Logical Inclusive OR
+    /// ORA: Logical Inclusive OR
+    ///
+    /// An inclusive OR is performed, bit by bit, on the accumulator contents
+    /// using the contents of a byte of memory.
     fn ora(&mut self, mode: AddrMode) {
         let operand = self.decode_operand(mode);
         let value = self.read_operand(&operand);
