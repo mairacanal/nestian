@@ -4,7 +4,6 @@ use crate::context::Context;
 use crate::memory::Memory;
 
 const STACK_OFFSET: u16 = 0x0100;
-
 // https://www.nesdev.org/wiki/CPU_addressing_modes
 enum AddrMode {
     Imp,    // implicit
@@ -113,7 +112,214 @@ impl Cpu {
 
             match op_code {
                 0x69 => self.adc(AddrMode::Imm),
-                _ => panic!("Not an instruction!"),
+                0x65 => self.adc(AddrMode::Zp),
+                0x75 => self.adc(AddrMode::ZpIndX),
+                0x6d => self.adc(AddrMode::Abs),
+                0x7d => self.adc(AddrMode::AbsX),
+                0x79 => self.adc(AddrMode::AbsY),
+                0x61 => self.adc(AddrMode::IndX),
+                0x71 => self.adc(AddrMode::IndY),
+
+                0x29 => self.and(AddrMode::Imm),
+                0x25 => self.and(AddrMode::Zp),
+                0x35 => self.and(AddrMode::ZpIndX),
+                0x2d => self.and(AddrMode::Abs),
+                0x3d => self.and(AddrMode::AbsX),
+                0x39 => self.and(AddrMode::AbsY),
+                0x21 => self.and(AddrMode::IndX),
+                0x31 => self.and(AddrMode::IndY),
+
+                0x0a => self.asl(AddrMode::Acc),
+                0x06 => self.asl(AddrMode::Zp),
+                0x16 => self.asl(AddrMode::ZpIndX),
+                0x0e => self.asl(AddrMode::Abs),
+                0x1e => self.asl(AddrMode::AbsX),
+
+                0x90 => self.bcc(AddrMode::Rel),
+
+                0xb0 => self.bcs(AddrMode::Rel),
+
+                0xf0 => self.beq(AddrMode::Rel),
+
+                0x24 => self.bit(AddrMode::Zp),
+                0x2c => self.bit(AddrMode::Abs),
+
+                0x30 => self.bmi(AddrMode::Rel),
+
+                0xd0 => self.bne(AddrMode::Rel),
+
+                0x10 => self.bpl(AddrMode::Rel),
+
+                // 0x00 => self.brk(AddrMode::Imp),
+                0x00 => break,
+
+                0x50 => self.bvc(AddrMode::Rel),
+
+                0x70 => self.bvs(AddrMode::Rel),
+
+                0x18 => self.clc(AddrMode::Imp),
+
+                0xd8 => self.cld(AddrMode::Imp),
+
+                0x58 => self.cli(AddrMode::Imp),
+
+                0xb8 => self.clv(AddrMode::Imp),
+
+                0xc9 => self.cmp(AddrMode::Imm),
+                0xc5 => self.cmp(AddrMode::Zp),
+                0xd5 => self.cmp(AddrMode::ZpIndX),
+                0xcd => self.cmp(AddrMode::Abs),
+                0xdd => self.cmp(AddrMode::AbsX),
+                0xd9 => self.cmp(AddrMode::AbsY),
+                0xc1 => self.cmp(AddrMode::IndX),
+                0xd1 => self.cmp(AddrMode::IndY),
+
+                0xe0 => self.cpx(AddrMode::Imm),
+                0xe4 => self.cpx(AddrMode::Zp),
+                0xec => self.cpx(AddrMode::Abs),
+
+                0xc0 => self.cpy(AddrMode::Imm),
+                0xc4 => self.cpy(AddrMode::Zp),
+                0xcc => self.cpy(AddrMode::Abs),
+
+                0xc6 => self.dec(AddrMode::Zp),
+                0xd6 => self.dec(AddrMode::ZpIndX),
+                0xce => self.dec(AddrMode::Abs),
+                0xde => self.dec(AddrMode::AbsX),
+
+                0xca => self.dex(AddrMode::Imp),
+
+                0x88 => self.dey(AddrMode::Imp),
+
+                0x49 => self.eor(AddrMode::Imm),
+                0x45 => self.eor(AddrMode::Zp),
+                0x55 => self.eor(AddrMode::ZpIndX),
+                0x4d => self.eor(AddrMode::Abs),
+                0x5d => self.eor(AddrMode::AbsX),
+                0x59 => self.eor(AddrMode::AbsY),
+                0x41 => self.eor(AddrMode::IndX),
+                0x51 => self.eor(AddrMode::IndY),
+
+                0xe6 => self.inc(AddrMode::Zp),
+                0xf6 => self.inc(AddrMode::ZpIndX),
+                0xee => self.inc(AddrMode::Abs),
+                0xfe => self.inc(AddrMode::AbsX),
+
+                0xe8 => self.inx(AddrMode::Imp),
+
+                0xc8 => self.iny(AddrMode::Imp),
+
+                0x4c => self.jmp(AddrMode::Abs),
+                0x6c => self.jmp(AddrMode::IndJmp),
+
+                0x20 => self.jsr(AddrMode::Abs),
+
+                0xa9 => self.lda(AddrMode::Imm),
+                0xa5 => self.lda(AddrMode::Zp),
+                0xb5 => self.lda(AddrMode::ZpIndX),
+                0xad => self.lda(AddrMode::Abs),
+                0xbd => self.lda(AddrMode::AbsX),
+                0xb9 => self.lda(AddrMode::AbsY),
+                0xa1 => self.lda(AddrMode::IndX),
+                0xb1 => self.lda(AddrMode::IndY),
+
+                0xa2 => self.ldx(AddrMode::Imm),
+                0xa6 => self.ldx(AddrMode::Zp),
+                0xb6 => self.ldx(AddrMode::ZpIndY),
+                0xae => self.ldx(AddrMode::Abs),
+                0xbe => self.ldx(AddrMode::AbsY),
+
+                0xa0 => self.ldy(AddrMode::Imm),
+                0xa4 => self.ldy(AddrMode::Zp),
+                0xb4 => self.ldy(AddrMode::ZpIndX),
+                0xac => self.ldy(AddrMode::Abs),
+                0xbc => self.ldy(AddrMode::AbsX),
+
+                0x4a => self.lsr(AddrMode::Imm),
+                0x46 => self.lsr(AddrMode::Zp),
+                0x56 => self.lsr(AddrMode::ZpIndX),
+                0x4e => self.lsr(AddrMode::Abs),
+                0x5e => self.lsr(AddrMode::AbsX),
+
+                0xea => self.nop(AddrMode::Imp),
+
+                0x09 => self.ora(AddrMode::Imm),
+                0x05 => self.ora(AddrMode::Zp),
+                0x15 => self.ora(AddrMode::ZpIndX),
+                0x0d => self.ora(AddrMode::Abs),
+                0x1d => self.ora(AddrMode::AbsX),
+                0x19 => self.ora(AddrMode::AbsY),
+                0x01 => self.ora(AddrMode::IndX),
+                0x11 => self.ora(AddrMode::IndY),
+
+                0x48 => self.pha(AddrMode::Imp),
+
+                0x08 => self.php(AddrMode::Imp),
+
+                0x68 => self.pla(AddrMode::Imp),
+
+                0x28 => self.plp(AddrMode::Imp),
+
+                0x2a => self.rol(AddrMode::Imm),
+                0x26 => self.rol(AddrMode::Zp),
+                0x36 => self.rol(AddrMode::ZpIndX),
+                0x2e => self.rol(AddrMode::Abs),
+                0x3e => self.rol(AddrMode::AbsX),
+
+                0x6a => self.ror(AddrMode::Imm),
+                0x66 => self.ror(AddrMode::Zp),
+                0x76 => self.ror(AddrMode::ZpIndX),
+                0x6e => self.ror(AddrMode::Abs),
+                0x7e => self.ror(AddrMode::AbsX),
+
+                0x40 => self.rti(AddrMode::Imp),
+
+                0x60 => self.rts(AddrMode::Imp),
+
+                0xe9 => self.sbc(AddrMode::Imm),
+                0xe5 => self.sbc(AddrMode::Zp),
+                0xf5 => self.sbc(AddrMode::ZpIndX),
+                0xed => self.sbc(AddrMode::Abs),
+                0xfd => self.sbc(AddrMode::AbsX),
+                0xf9 => self.sbc(AddrMode::AbsY),
+                0xe1 => self.sbc(AddrMode::IndX),
+                0xf1 => self.sbc(AddrMode::IndY),
+
+                0x38 => self.sec(AddrMode::Imp),
+
+                0xf8 => self.sed(AddrMode::Imp),
+
+                0x78 => self.sei(AddrMode::Imp),
+
+                0x85 => self.sta(AddrMode::Zp),
+                0x95 => self.sta(AddrMode::ZpIndX),
+                0x8d => self.sta(AddrMode::Abs),
+                0x9d => self.sta(AddrMode::AbsX),
+                0x99 => self.sta(AddrMode::AbsY),
+                0x81 => self.sta(AddrMode::IndX),
+                0x91 => self.sta(AddrMode::IndY),
+
+                0x86 => self.stx(AddrMode::Zp),
+                0x96 => self.stx(AddrMode::ZpIndY),
+                0x8e => self.stx(AddrMode::Abs),
+
+                0x84 => self.sty(AddrMode::Zp),
+                0x94 => self.sty(AddrMode::ZpIndX),
+                0x8c => self.sty(AddrMode::Abs),
+
+                0xaa => self.tax(AddrMode::Imp),
+
+                0xa8 => self.tay(AddrMode::Imp),
+
+                0xba => self.tsx(AddrMode::Imp),
+
+                0x8a => self.txa(AddrMode::Imp),
+
+                0x9a => self.txs(AddrMode::Imp),
+
+                0x98 => self.tya(AddrMode::Imp),
+
+                _ => panic!("Non-existing instruction: {op_code}")
             }
         }
     }
@@ -704,5 +910,34 @@ impl Cpu {
     fn tya(&mut self, mode: AddrMode) {
         self.context.A = self.context.Y;
         self.calculate_alu_flag(self.context.A);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn lda_sta_add() {
+        let mut cpu = Cpu::new();
+
+        cpu.load_program(vec![
+            0xa9, 0x10, // lda 0x10
+            0x85, 0x20, // sta (0x20)
+            0xa9, 0x01, // lda 0x01
+            0x65, 0x20, // add (0x20)
+            0x85, 0x21, // sta (0x21)
+            0xe6, 0x21, // inc (0x21)
+            0xa4, 0x21, // ldy (0x21)
+            0xc8,       // iny
+            0x00        // brk
+        ], 0x1000);
+
+        cpu.run(0x1000);
+
+        assert_eq!(cpu.peek(&0x20), 0x10);
+        assert_eq!(cpu.peek(&0x21), 0x12);
+        assert_eq!(cpu.context.A, 0x11);
+        assert_eq!(cpu.context.Y, 0x13);
     }
 }
