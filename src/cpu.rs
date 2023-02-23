@@ -4,6 +4,7 @@ use crate::context::Context;
 use crate::memory::Memory;
 
 const STACK_OFFSET: u16 = 0x0100;
+
 // https://www.nesdev.org/wiki/CPU_addressing_modes
 enum AddrMode {
     Imp,    // implicit
@@ -48,17 +49,16 @@ impl Cpu {
         }
     }
 
-    pub fn load_program(&mut self, program: Vec<u8>, addr: u16) {
-        self.memory.set_bytes(addr, program);
-    }
-
     pub fn power_on(&mut self) {
         self.context.S = 0x34;
         self.context.set_flags(0x34);
     }
 
-    pub fn run(&mut self, addr: u16) {
+    pub fn run_program(&mut self, program: Vec<u8>, addr: u16) {
         self.power_on();
+
+        self.memory.set_bytes(addr, program);
+
         self.context.PC = addr;
         self.execute();
     }
@@ -67,6 +67,10 @@ impl Cpu {
 
     pub fn peek(&self, addr: &u16) -> u8 {
         self.memory.get_byte(*addr)
+    }
+
+    pub fn peek_word(&self, addr: &u16) -> u16 {
+        self.memory.get_word(*addr)
     }
 
     pub fn poke(&mut self, addr: &u16, value: u8) {
@@ -319,7 +323,7 @@ impl Cpu {
 
                 0x98 => self.tya(AddrMode::Imp),
 
-                _ => panic!("Non-existing instruction: {op_code}")
+                _ => panic!("[CPU] Unrecognized instruction or illegal instruction!"),
             }
         }
     }
@@ -379,15 +383,21 @@ impl Cpu {
             AddrMode::ZpIndX => (self.decode_byte() + self.context.X) as u16,
             AddrMode::ZpIndY => (self.decode_byte() + self.context.Y) as u16,
             AddrMode::IndJmp => {
-                let word = self.decode_word();
-                self.memory.get_word(word)
+                let addr = self.decode_word();
+
+                if addr & 0xff == 0xff {
+                    // JMP hardware bug
+                    // http://wiki.nesdev.com/w/index.php/Errata
+                    self.peek(&addr) as u16 + (self.peek(&(addr & 0xff00)) as u16) << 8
+                } else {
+                    self.peek_word(&addr)
+                }
             }
-            AddrMode::Abs => self.decode_word(),
+            AddrMode::Abs | AddrMode::AbsJmp => self.decode_word(),
             AddrMode::AbsX => self.decode_word() + self.context.X as u16,
             AddrMode::AbsY => self.decode_word() + self.context.Y as u16,
             AddrMode::IndX => {
-                let word = self.decode_byte() as u16;
-                let addr = self.peek(&word);
+                let addr = self.decode_byte();
                 self.peek(&((addr + self.context.X) as u16)) as u16
                     + (self.peek(&((addr + self.context.X + 1) as u16)) as u16)
                     << 8
@@ -408,9 +418,10 @@ impl Cpu {
     fn branch(&mut self, cond: bool, mode: AddrMode) {
         assert!(matches!(mode, AddrMode::Rel));
 
+        let rel = self.decode_byte() as i8;
         if cond {
-            let PC = self.context.PC as i8 + self.decode_byte() as i8;
-            self.context.PC = PC as u16;
+            let pc = self.context.PC as i8 + rel;
+            self.context.PC = pc as u16;
         }
     }
 
@@ -419,9 +430,9 @@ impl Cpu {
         self.context.set_negative((value & 0x80) != 0);
     }
 
-    fn determine_overflow_flag(&mut self, old_value: u8, new_value: u8) {
-        self.context
-            .set_overflow((old_value & 0x80) != (new_value & 0x80));
+    // TODO: is val2 u8 or i8?
+    fn is_sign_overflow(&mut self, val1: u8, val2: u8, new_value: u8) -> bool {
+        (val1 & 0x80) == (val2 & 0x80) && (val1 & 0x80) != (new_value & 0x80)
     }
 
     /// ADC: Add with carry
@@ -432,12 +443,15 @@ impl Cpu {
     fn adc(&mut self, mode: AddrMode) {
         let operand = self.decode_operand(mode);
         let value = self.read_operand(&operand);
+        let old_value = self.context.A;
 
         // A + M + C -> A
         self.context.A += value + self.context.get_carry() as u8;
 
-        // TODO: Update Carry flag
-        self.determine_overflow_flag(value, self.context.A);
+        let overflow = self.is_sign_overflow(old_value, value, self.context.A);
+
+        self.context.set_overflow(overflow);
+        self.context.set_carry(old_value > self.context.A);
         self.calculate_alu_flag(self.context.A);
     }
 
@@ -451,7 +465,6 @@ impl Cpu {
 
         self.context.A &= value;
 
-        // Update Flags
         self.calculate_alu_flag(self.context.A);
     }
 
@@ -552,23 +565,34 @@ impl Cpu {
     fn cmp(&mut self, mode: AddrMode) {
         let operand = self.decode_operand(mode);
         let value = self.read_operand(&operand);
+        let diff = self.context.A - value;
 
-        // Update Flags
-        if self.context.A < value {
-            self.context.set_negative(true);
-        } else if self.context.A > value {
-            self.context.set_carry(true);
-        } else {
-            self.context.set_carry(true);
-            self.context.set_zero(true);
-        }
+        self.context.set_carry(self.context.A >= value);
+        self.context.set_zero(diff == 0);
+        self.context.set_negative(diff & 0x80 != 0);
     }
 
     // CPX: Compare X Register
-    fn cpx(&mut self, mode: AddrMode) {}
+    fn cpx(&mut self, mode: AddrMode) {
+        let operand = self.decode_operand(mode);
+        let value = self.read_operand(&operand);
+        let diff = self.context.X - value;
+
+        self.context.set_carry(self.context.X >= value);
+        self.context.set_zero(diff == 0);
+        self.context.set_negative(diff & 0x80 != 0);
+    }
 
     // CPY: Compare Y Register
-    fn cpy(&mut self, mode: AddrMode) {}
+    fn cpy(&mut self, mode: AddrMode) {
+        let operand = self.decode_operand(mode);
+        let value = self.read_operand(&operand);
+        let diff = self.context.Y - value;
+
+        self.context.set_carry(self.context.Y >= value);
+        self.context.set_zero(diff == 0);
+        self.context.set_negative(diff & 0x80 != 0);
+    }
 
     // DEC: Decrement Memory
     fn dec(&mut self, mode: AddrMode) {
@@ -718,7 +742,8 @@ impl Cpu {
     ///
     /// Pushes a copy of the status flags on to the stack.
     fn php(&mut self, mode: AddrMode) {
-        self.push_byte(self.context.P);
+        // http://wiki.nesdev.com/w/index.php/CPU_status_flag_behavior
+        self.push_byte(self.context.P | 0x30);
     }
 
     /// PLA: Push Accumulator
@@ -736,6 +761,10 @@ impl Cpu {
     /// flags will take on new states as determined by the value pulled.
     fn plp(&mut self, mode: AddrMode) {
         let status = self.pop_byte();
+
+        // http://wiki.nesdev.com/w/index.php/CPU_status_flag_behavior
+        // Bit 5 and 4 are ignored when pulled from stack - which means they are preserved
+        let status = (status & 0xef) | (self.context.P & 0x10) | 0x20;
         self.context.set_flags(status);
     }
 
@@ -747,7 +776,7 @@ impl Cpu {
     fn rol(&mut self, mode: AddrMode) {
         let operand = self.decode_operand(mode);
         let value = self.read_operand(&operand);
-        let new_value = (value << 1) & self.context.get_carry() as u8;
+        let new_value = (value << 1) | self.context.get_carry() as u8;
 
         self.write_operand(&operand, new_value);
 
@@ -765,7 +794,7 @@ impl Cpu {
     fn ror(&mut self, mode: AddrMode) {
         let operand = self.decode_operand(mode);
         let value = self.read_operand(&operand);
-        let new_value = (value >> 1) & ((self.context.get_carry() as u8) << 7);
+        let new_value = (value >> 1) | ((self.context.get_carry() as u8) << 7);
 
         self.write_operand(&operand, new_value);
 
@@ -779,7 +808,12 @@ impl Cpu {
     ///
     /// The RTI instruction is used at the end of an interrupt processing routine.
     /// It pulls the processor flags from the stack followed by the program counter.
-    fn rti(&mut self, mode: AddrMode) {}
+    fn rti(&mut self, mode: AddrMode) {
+        self.plp(AddrMode::Imp);
+
+        let addr = self.pop_word();
+        self.context.PC = addr;
+    }
 
     /// RTS: Return from Subroutine
     ///
@@ -802,10 +836,15 @@ impl Cpu {
         let value = self.read_operand(&operand);
 
         // A,Z,C,N = A-M-(1-C)
-        self.context.A = self.context.A - value - (1 - self.context.get_carry() as u8);
+        let value = !value + 1;
+        let value = value - (1 - self.context.get_carry() as u8);
+        let old_value = self.context.A;
+        self.context.A += value;
 
-        self.context.set_carry(self.context.A > value);
-        self.determine_overflow_flag(value, self.context.A);
+        let overflow = self.is_sign_overflow(old_value, value, self.context.A);
+
+        self.context.set_overflow(overflow);
+        self.context.set_carry(self.context.A <= old_value);
         self.calculate_alu_flag(self.context.A);
     }
 
@@ -921,19 +960,20 @@ mod tests {
     fn lda_sta_add() {
         let mut cpu = Cpu::new();
 
-        cpu.load_program(vec![
-            0xa9, 0x10, // lda 0x10
-            0x85, 0x20, // sta (0x20)
-            0xa9, 0x01, // lda 0x01
-            0x65, 0x20, // add (0x20)
-            0x85, 0x21, // sta (0x21)
-            0xe6, 0x21, // inc (0x21)
-            0xa4, 0x21, // ldy (0x21)
-            0xc8,       // iny
-            0x00        // brk
-        ], 0x1000);
-
-        cpu.run(0x1000);
+        cpu.run_program(
+            vec![
+                0xa9, 0x10, // lda 0x10
+                0x85, 0x20, // sta (0x20)
+                0xa9, 0x01, // lda 0x01
+                0x65, 0x20, // add (0x20)
+                0x85, 0x21, // sta (0x21)
+                0xe6, 0x21, // inc (0x21)
+                0xa4, 0x21, // ldy (0x21)
+                0xc8, // iny
+                0x00, // brk
+            ],
+            0x1000,
+        );
 
         assert_eq!(cpu.peek(&0x20), 0x10);
         assert_eq!(cpu.peek(&0x21), 0x12);
